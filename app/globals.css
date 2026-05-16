@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+/* ── Theme tokens ─────────────────────────────── */
+:root {
+  --bg-primary:   #0D0D1A;
+  --bg-secondary: #1A1A2E;
+  --bg-card:      #16213E;
+  --accent:       #6C63FF;
+  --accent-hover: #5A52E0;
+  --text-primary: #E8E8F0;
+  --text-muted:   #8888AA;
+  --success:      #4ADE80;
+  --warning:      #FBBF24;
+  --danger:       #F87171;
+  --border:       #2A2A4A;
+}
+
+/* Register as Tailwind color tokens */
+@theme inline {
+  --color-accent:       var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-bg-primary:   var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-card:      var(--bg-card);
+  --color-text-primary: var(--text-primary);
+  --color-text-muted:   var(--text-muted);
+  --color-success:      var(--success);
+  --color-warning:      var(--warning);
+  --color-danger:       var(--danger);
+  --color-border:       var(--border);
+}
+
+/* ── Base ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* ── Scrollbar ────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ── Utility classes ──────────────────────────── */
+.glass {
+  background: rgba(22, 33, 62, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(42, 42, 74, 0.6);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--accent), #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glow {
+  box-shadow: 0 0 24px rgba(108, 99, 255, 0.35);
+}
+
+.glow-sm {
+  box-shadow: 0 0 12px rgba(108, 99, 255, 0.25);
+}
+
+/* ── Input resets ─────────────────────────────── */
+input, textarea, select {
+  background: transparent;
+  outline: none;
+  font-family: inherit;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+
+/* ── Recharts overrides ───────────────────────── */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: var(--border);
+}
+.recharts-text { fill: var(--text-muted); font-size: 12px; }
+.recharts-legend-item-text { color: var(--text-muted) !important; }
+.recharts-tooltip-wrapper { outline: none; }
+
+/* ── Animations ───────────────────────────────── */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(108,99,255,0.3); }
+  50%       { box-shadow: 0 0 24px rgba(108,99,255,0.6); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
