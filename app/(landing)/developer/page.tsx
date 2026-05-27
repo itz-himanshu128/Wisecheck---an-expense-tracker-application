@@ -17,18 +17,18 @@ export default function DeveloperPage() {
           JD
         </div>
         
-        <h1 className="text-3xl font-bold text-white mb-2">John Doe</h1>
+        <h1 className="text-3xl font-bold text-white mb-2">Himanshu Bhardwaj</h1>
         <p className="text-[var(--accent)] font-medium mb-6">Full Stack Developer</p>
         
         <p className="text-[var(--text-muted)] leading-relaxed mb-8 max-w-lg mx-auto">
-          Passionate about building beautiful, high-performance web applications. WiseCheck is a showcase of modern Next.js architecture, Supabase integration, and premium UI/UX design.
+          Passionate about building beautiful, high-performance web applications. WiseCheck is a showcase of modern Next.js architecture, Supabase integration, and creative UI/UX design.
         </p>
         
         <div className="flex justify-center gap-4">
-          <Link href="https://github.com" target="_blank" className="p-3 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors border border-[var(--border)]">
+          <Link href="https://github.com/itz-himanshu128" target="_blank" className="p-3 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors border border-[var(--border)]">
             <Code size={20} />
           </Link>
-          <Link href="mailto:hello@example.com" target="_blank" className="p-3 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors border border-[var(--border)]">
+          <Link href="mailto:[EMAIL_ADDRESS]" target="_blank" className="p-3 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors border border-[var(--border)]">
             <Mail size={20} />
           </Link>
           <Link href="#" className="p-3 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors border border-[var(--border)]">
