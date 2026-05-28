@@ -28,7 +28,7 @@ export default function FloatingSaveButton({
         {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
         {label}
         {count !== undefined && count > 0 && (
-          <span className="bg-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center"
+          <span className="bg-white/90 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center"
             style={{ color: "var(--accent)" }}>
             {count}
           </span>

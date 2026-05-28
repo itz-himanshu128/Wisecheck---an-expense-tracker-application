@@ -1,163 +1,181 @@
 "use client";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowUpRight, Plus, Trash2, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import FloatingSaveButton from "@/components/ui/FloatingSaveButton";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { format } from "date-fns";
 import { Lended } from "@/lib/types";
-
-function formatDate(d: string | null) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
-}
 
 export default function LendedClient({ initial }: { initial: Lended[] }) {
   const [rows, setRows] = useState<Lended[]>(initial);
   const [showForm, setShowForm] = useState(false);
   const [showReceived, setShowReceived] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [pending, setPending] = useState<Partial<Lended>[]>([]);
-  const [form, setForm] = useState({ to_person: "", amount: "", reason: "", lended_on: new Date().toISOString().split("T")[0], expected_by: "" });
+  const [toPerson, setTo] = useState("");
+  const [amount, setAmount] = useState("");
+  const [reason, setReason] = useState("");
+  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [expectedBy, setExpected] = useState("");
 
-  const active   = rows.filter((r) => !r.is_received);
+  const supabase = createClient();
+
+  const active = rows.filter((r) => !r.is_received);
   const received = rows.filter((r) => r.is_received);
+  const outstanding = active.reduce((s, l) => s + l.amount, 0);
 
-  const addToQueue = () => {
-    if (!form.to_person || !form.amount) return;
-    setPending((p) => [...p, { to_person: form.to_person, amount: parseFloat(form.amount), reason: form.reason || null, lended_on: form.lended_on, expected_by: form.expected_by || null, is_received: false }]);
-    setForm({ to_person: "", amount: "", reason: "", lended_on: new Date().toISOString().split("T")[0], expected_by: "" });
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = parseFloat(amount);
+    if (!toPerson.trim() || !amt) return toast.error("Enter person and amount");
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return toast.error("User not authenticated");
+
+    const { data, error } = await supabase
+      .from("lended")
+      .insert({
+        user_id: user.id,
+        to_person: toPerson.trim(),
+        amount: amt,
+        reason: reason.trim() || null,
+        lended_on: date,
+        expected_by: expectedBy || null,
+        is_received: false,
+      })
+      .select("*")
+      .single();
+
+    if (error) return toast.error(error.message);
+    setRows([data, ...rows]);
+    toast.success("Lended entry added");
+    setTo(""); setAmount(""); setReason(""); setExpected("");
     setShowForm(false);
   };
 
-  const markReceived = async (id: string) => {
-    const supabase = createClient();
-    await supabase.from("lended").update({ is_received: true }).eq("id", id);
-    setRows((r) => r.map((row) => row.id === id ? { ...row, is_received: true } : row));
+  const handleToggle = async (id: string, currentStatus: boolean) => {
+    const { error } = await supabase
+      .from("lended")
+      .update({ is_received: !currentStatus })
+      .eq("id", id);
+    if (error) return toast.error(error.message);
+    setRows(rows.map((l) => l.id === id ? { ...l, is_received: !currentStatus } : l));
+    toast.success("Status updated");
   };
 
-  const handleSave = async () => {
-    if (!pending.length) return;
-    setSaving(true);
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data } = await supabase.from("lended").insert(pending.map((p) => ({ ...p, user_id: user.id }))).select("*");
-    if (data) setRows((r) => [...r, ...(data as Lended[])]);
-    setPending([]);
-    setSaving(false);
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from("lended").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    setRows(rows.filter((l) => l.id !== id));
+    toast.success("Entry removed");
   };
-
-  const thStyle = "text-left text-xs font-semibold px-4 py-3";
-  const tdStyle = "px-4 py-3 text-sm";
 
   return (
-    <div className="max-w-5xl mx-auto pb-32 flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Lended</h2>
-          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Money others owe to you</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-primary text-primary-foreground shadow-elegant">
+            <ArrowUpRight className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Lended</h2>
+            <p className="text-sm text-muted-foreground">Money owed to you — outstanding <span className="font-semibold text-success">₹{outstanding.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></p>
+          </div>
         </div>
-        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-          onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
-          style={{ background: "var(--accent)" }}>
-          <Plus size={16} /> Add Entry
-        </motion.button>
-      </div>
+        <Button onClick={() => setShowForm(!showForm)} className="bg-gradient-primary text-primary-foreground shadow-elegant">
+          <Plus className="h-4 w-4 mr-1" /> Add Entry
+        </Button>
+      </motion.div>
 
+      {/* Add Form */}
       <AnimatePresence>
         {showForm && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-            className="glass rounded-2xl p-6" style={{ border: "1px solid var(--border)" }}>
-            <h3 className="text-sm font-semibold mb-4 text-white">New Entry</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { label: "To *", key: "to_person", placeholder: "Name" },
-                { label: "Amount (₹) *", key: "amount", placeholder: "0", type: "number" },
-                { label: "Purpose", key: "reason", placeholder: "Optional" },
-                { label: "Expected By", key: "expected_by", type: "date" },
-              ].map(({ label, key, placeholder, type = "text" }) => (
-                <div key={key}>
-                  <label className="text-xs font-medium mb-1 block" style={{ color: "var(--text-muted)" }}>{label}</label>
-                  <input type={type} placeholder={placeholder}
-                    value={(form as Record<string, string>)[key]}
-                    onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl text-sm text-white transition-all"
-                    style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", colorScheme: "dark" }} />
-                </div>
+          <motion.form
+            onSubmit={handleAdd}
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+            transition={{ delay: 0.1 }}
+            className="grid gap-3 rounded-2xl border border-border bg-card p-5 shadow-soft md:grid-cols-[1fr_120px_1fr_140px_140px_auto]"
+          >
+            <Input placeholder="To whom" value={toPerson} onChange={(e) => setTo(e.target.value)} />
+            <Input type="number" step="0.01" placeholder="Amount" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <Input placeholder="Purpose" value={reason} onChange={(e) => setReason(e.target.value)} />
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} title="Lent on" />
+            <Input type="date" value={expectedBy} onChange={(e) => setExpected(e.target.value)} title="Expected return" />
+            <Button type="submit" className="bg-gradient-primary text-primary-foreground shadow-elegant">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </motion.form>
+        )}
+      </AnimatePresence>
+
+      {/* Table */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3">To</th>
+                <th className="px-4 py-3">Amount</th>
+                <th className="px-4 py-3">Purpose</th>
+                <th className="px-4 py-3">Lent on</th>
+                <th className="px-4 py-3">Expected</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {active.length === 0 ? (
+                <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No active lended entries yet.</td></tr>
+              ) : active.map((l) => (
+                <tr key={l.id} className="border-t border-border hover:bg-muted/30">
+                  <td className="px-4 py-3 font-medium text-foreground">{l.to_person}</td>
+                  <td className="px-4 py-3 font-semibold text-success">₹{l.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{l.reason || "—"}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{format(new Date(l.lended_on), "MMM d, yyyy")}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{l.expected_by ? format(new Date(l.expected_by), "MMM d, yyyy") : "—"}</td>
+                  <td className="px-4 py-3">
+                    <span className="rounded-full bg-warning/15 px-2.5 py-1 text-xs font-medium text-warning">Pending</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-1">
+                      <button onClick={() => handleToggle(l.id, l.is_received)} className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-success" title="Mark received">
+                        <Check className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => handleDelete(l.id)} className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
               ))}
-            </div>
-            <div className="flex gap-3 mt-4">
-              <button onClick={addToQueue} className="px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ background: "var(--accent)" }}>Add to Queue</button>
-              <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-xl text-sm" style={{ color: "var(--text-muted)" }}>Cancel</button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </tbody>
+          </table>
+        </div>
+      </motion.div>
 
-      <AnimatePresence>
-        {pending.length > 0 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="glass rounded-2xl p-4" style={{ border: "1px solid var(--success)", background: "rgba(74,222,128,0.05)" }}>
-            <p className="text-xs font-semibold mb-2" style={{ color: "var(--success)" }}>{pending.length} unsaved</p>
-            {pending.map((p, i) => (
-              <div key={i} className="flex justify-between text-sm py-1">
-                <span className="text-white">{p.to_person}</span>
-                <span style={{ color: "var(--success)" }}>₹{Number(p.amount).toLocaleString("en-IN")}</span>
-              </div>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="glass rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-        <table className="w-full">
-          <thead>
-            <tr style={{ borderBottom: "1px solid var(--border)", color: "var(--text-muted)" }}>
-              <th className={thStyle}>To</th><th className={thStyle}>Amount</th>
-              <th className={thStyle}>Purpose</th><th className={thStyle}>Lended On</th>
-              <th className={thStyle}>Expected By</th><th className={thStyle}>Back?</th>
-            </tr>
-          </thead>
-          <tbody>
-            {active.length === 0 ? (
-              <tr><td colSpan={6} className="text-center py-10 text-sm" style={{ color: "var(--text-muted)" }}>No active lended entries</td></tr>
-            ) : active.map((row) => (
-              <motion.tr key={row.id} layout style={{ borderBottom: "1px solid var(--border)" }} className="hover:bg-white/[0.02] transition-colors">
-                <td className={`${tdStyle} font-medium text-white`}>{row.to_person}</td>
-                <td className={tdStyle} style={{ color: "var(--success)" }}>₹{row.amount.toLocaleString("en-IN")}</td>
-                <td className={tdStyle} style={{ color: "var(--text-muted)" }}>{row.reason ?? "—"}</td>
-                <td className={tdStyle} style={{ color: "var(--text-muted)" }}>{formatDate(row.lended_on)}</td>
-                <td className={tdStyle} style={{ color: "var(--text-muted)" }}>{formatDate(row.expected_by)}</td>
-                <td className={tdStyle}>
-                  <button onClick={() => markReceived(row.id)}
-                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-all"
-                    style={{ background: "rgba(74,222,128,0.1)", color: "var(--success)", border: "1px solid rgba(74,222,128,0.3)" }}>
-                    <Check size={11} /> Received
-                  </button>
-                </td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
+      {/* Received section */}
       {received.length > 0 && (
         <div>
-          <button onClick={() => setShowReceived(!showReceived)} className="flex items-center gap-2 text-sm font-medium mb-3" style={{ color: "var(--text-muted)" }}>
-            {showReceived ? <ChevronUp size={16} /> : <ChevronDown size={16} />} Received ({received.length})
+          <button onClick={() => setShowReceived(!showReceived)} className="flex items-center gap-2 text-sm font-medium mb-3 text-muted-foreground">
+            {showReceived ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            Received ({received.length})
           </button>
           <AnimatePresence>
             {showReceived && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-                className="glass rounded-2xl overflow-hidden opacity-60" style={{ border: "1px solid var(--border)" }}>
-                <table className="w-full">
+                className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft opacity-70">
+                <table className="w-full text-sm">
                   <tbody>
-                    {received.map((row) => (
-                      <tr key={row.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                        <td className={`${tdStyle}`} style={{ color: "var(--text-muted)" }}>{row.to_person}</td>
-                        <td className={tdStyle} style={{ color: "var(--text-muted)" }}>₹{row.amount.toLocaleString("en-IN")}</td>
-                        <td className={tdStyle}><span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "rgba(74,222,128,0.1)", color: "var(--success)" }}>Received</span></td>
+                    {received.map((l) => (
+                      <tr key={l.id} className="border-t border-border">
+                        <td className="px-4 py-3 font-medium text-muted-foreground">{l.to_person}</td>
+                        <td className="px-4 py-3 text-muted-foreground">₹{l.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{format(new Date(l.lended_on), "MMM d, yyyy")}</td>
+                        <td className="px-4 py-3">
+                          <span className="rounded-full bg-success/15 px-2.5 py-1 text-xs font-medium text-success">Received</span>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -167,10 +185,6 @@ export default function LendedClient({ initial }: { initial: Lended[] }) {
           </AnimatePresence>
         </div>
       )}
-
-      <AnimatePresence>
-        {pending.length > 0 && <FloatingSaveButton onClick={handleSave} loading={saving} count={pending.length} />}
-      </AnimatePresence>
     </div>
   );
 }

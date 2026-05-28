@@ -18,18 +18,19 @@ export default async function DashboardPage() {
 
   const { start, end } = getMonthRange();
 
-  // Fetch categories
-  const { data: categories = [] } = await supabase
-    .from("categories").select("*").eq("user_id", user.id).order("name");
+  // Fetch categories & this month's expenses with their categories in parallel
+  const [categoriesRes, expensesRes] = await Promise.all([
+    supabase.from("categories").select("*").eq("user_id", user.id).order("name"),
+    supabase.from("expenses")
+      .select("*, expense_categories(category_id)")
+      .eq("user_id", user.id)
+      .gte("date", start)
+      .lte("date", end)
+      .order("date", { ascending: false })
+  ]);
 
-  // Fetch this month's expenses with their categories
-  const { data: expenses = [] } = await supabase
-    .from("expenses")
-    .select("*, expense_categories(category_id)")
-    .eq("user_id", user.id)
-    .gte("date", start)
-    .lte("date", end)
-    .order("date", { ascending: false });
+  const categories = categoriesRes.data ?? [];
+  const expenses = expensesRes.data ?? [];
 
   // Build chart data: sum by category (debits only)
   const catMap: Record<string, { name: string; value: number; color: string }> = {};
@@ -68,8 +69,7 @@ export default async function DashboardPage() {
   return (
     <DashboardClient
       categories={categories ?? []}
-      chartData={chartData}
-      lineData={lineData}
+      initialExpenses={expenses ?? []}
     />
   );
 }

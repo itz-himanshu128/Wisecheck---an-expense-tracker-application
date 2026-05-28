@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import Sidebar from "@/components/sidebar/Sidebar";
-import TopBar from "@/components/TopBar";
+import AppSidebar from "@/components/sidebar/AppSidebar";
+import AppLayoutClient from "./AppLayoutClient";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -17,18 +17,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .single();
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: "var(--bg-primary)" }}>
-      <Sidebar />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <TopBar
-          balance={profile?.current_balance ?? 0}
-          userName={profile?.full_name}
-          avatarUrl={profile?.avatar_url}
-        />
-        <main className="flex-1 overflow-y-auto p-6">
-          {children}
-        </main>
-      </div>
-    </div>
+    <AppLayoutClient
+      balance={profile?.current_balance ?? 0}
+      userName={profile?.full_name}
+      avatarUrl={profile?.avatar_url}
+    >
+      {children}
+    </AppLayoutClient>
   );
 }
