@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Wallet } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
@@ -59,7 +60,7 @@ export default function AppLayoutClient({ balance, userName, avatarUrl, children
           </div>
 
           <div className="flex">
-            <AppSidebar />
+            <AppSidebar userName={userName} avatarUrl={avatarUrl} />
 
             <div className="min-w-0 flex-1">
               <div className="mx-auto max-w-[1600px] px-4 py-6 pl-16 lg:px-8 lg:pl-8">
@@ -67,27 +68,42 @@ export default function AppLayoutClient({ balance, userName, avatarUrl, children
                 <motion.header
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mb-6 flex items-center justify-between"
+                  className="mb-6 flex items-center justify-between gap-4 border-b border-border/40 pb-5"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-primary text-primary-foreground shadow-elegant">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-primary text-primary-foreground shadow-elegant">
                       <Wallet className="h-5 w-5" />
                     </div>
                     <div>
-                      <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
-                      <p className="text-xs text-muted-foreground">Your money, beautifully tracked.</p>
+                      <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                        {pathname === "/dashboard" ? `Welcome back, ${userName?.split(" ")[0] || "there"}!` : title}
+                      </h1>
+                      <p className="text-xs text-muted-foreground">
+                        {pathname === "/dashboard" ? "Here is a summary of your financial health today." : "Your money, beautifully tracked."}
+                      </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
                     {/* Balance pill */}
-                    <div className="hidden sm:flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5">
+                    <div className="hidden sm:flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 shadow-soft">
                       <span className="text-xs font-medium text-muted-foreground">Balance</span>
                       <span className={`text-sm font-bold ${balance >= 0 ? "text-success" : "text-destructive"}`}>
                         {balance >= 0 ? "+" : ""}₹{Math.abs(balance).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </span>
                     </div>
                     <ThemeToggle />
+                    
+                    {/* User profile avatar circle */}
+                    <Link href="/profile" className="flex items-center">
+                      <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-border bg-accent hover:border-primary transition-all duration-200 cursor-pointer shadow-soft flex items-center justify-center font-bold text-sm">
+                        {avatarUrl ? (
+                          <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                        ) : (
+                          (userName ? userName[0].toUpperCase() : "U")
+                        )}
+                      </div>
+                    </Link>
                   </div>
                 </motion.header>
 

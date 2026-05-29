@@ -17,7 +17,13 @@ const NAV_ITEMS = [
   { href: "/plans",     label: "Plans",      icon: NotebookPen },
 ];
 
-export default function AppSidebar() {
+export default function AppSidebar({
+  userName,
+  avatarUrl,
+}: {
+  userName?: string | null;
+  avatarUrl?: string | null;
+}) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -87,18 +93,33 @@ export default function AppSidebar() {
           })}
         </nav>
 
+        {/* User Profile Widget */}
+        <div className="border-t border-border pt-4 mb-2 flex items-center gap-3 px-2">
+          <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-border bg-accent text-accent-foreground flex items-center justify-center font-bold text-sm shadow-soft">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+            ) : (
+              (userName ? userName[0].toUpperCase() : "U")
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-semibold text-foreground leading-none mb-0.5">{userName || "User Profile"}</p>
+            <p className="truncate text-[10px] text-muted-foreground leading-none">Personal Account</p>
+          </div>
+        </div>
+
         {/* Sign Out */}
-        <div className="border-t border-border pt-4">
+        <div className="border-t border-border pt-2">
           <button
             onClick={handleSignOut}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <LogOut className="h-4 w-4 shrink-0" />
             <span>Sign Out</span>
           </button>
         </div>
 
-        <p className="px-2 pt-4 text-[10px] uppercase tracking-wider text-muted-foreground">v1.0 · WiseCheck</p>
+        <p className="px-2 pt-3 text-[9px] uppercase tracking-wider text-muted-foreground">v1.0 · WiseCheck</p>
       </motion.aside>
     </>
   );
