@@ -1,16 +1,16 @@
 "use client";
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Shield, Zap, TrendingUp, BarChart3, Users, Lock, Sparkles } from "lucide-react";
 
 // --- ANIMATION VARIANTS ---
-const fadeInUp = {
+const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
 };
 
-const staggerContainer = {
+const staggerContainer: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -19,7 +19,7 @@ const staggerContainer = {
 };
 
 // --- DATA ---
-const HERO_WORDS = ["Your money", "Your Debt.", "The Future.", "Your Life."];
+const HERO_WORDS = ["Your Money", "Your Debt.", "The Future.", "Your Life."];
 
 const BENTO_FEATURES = [
   {
