@@ -31,7 +31,7 @@ export default function AppSidebar({
     const supabase = createClient();
     await supabase.auth.signOut();
     localStorage.clear();
-    window.location.href = "/auth/login";
+    window.location.href = "/";
   };
 
   return (

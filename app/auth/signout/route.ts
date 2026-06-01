@@ -7,5 +7,5 @@ export async function POST(request: NextRequest) {
   if (user) {
     await supabase.auth.signOut();
   }
-  return NextResponse.redirect(new URL("/auth/login", request.url), { status: 302 });
+  return NextResponse.redirect(new URL("/", request.url), { status: 302 });
 }

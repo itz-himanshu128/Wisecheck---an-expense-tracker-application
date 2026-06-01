@@ -10,11 +10,29 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!user) redirect("/auth/login");
 
   // Fetch profile for balance + avatar
-  const { data: profile } = await supabase
+  let { data: profile, error } = await supabase
     .from("profiles")
     .select("full_name, avatar_url, current_balance")
     .eq("id", user.id)
     .single();
+
+  // If profile does not exist yet (brand new user), create it on demand
+  if (error || !profile) {
+    const { data: newProfile, error: insertError } = await supabase
+      .from("profiles")
+      .insert({
+        id: user.id,
+        full_name: user.user_metadata?.full_name || user.email?.split("@")[0] || "New User",
+        avatar_url: user.user_metadata?.avatar_url || null,
+        current_balance: 0,
+      })
+      .select("full_name, avatar_url, current_balance")
+      .single();
+
+    if (!insertError && newProfile) {
+      profile = newProfile;
+    }
+  }
 
   return (
     <AppLayoutClient
