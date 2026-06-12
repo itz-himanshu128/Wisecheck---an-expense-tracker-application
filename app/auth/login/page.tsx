@@ -6,9 +6,6 @@ import { TrendingUp, Shield, BarChart3, ArrowRight } from "lucide-react";
 
 export default function LoginPage() {
   const supabase = createClient();
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const handleGoogleLogin = async () => {
     await supabase.auth.signInWithOAuth({
@@ -20,27 +17,6 @@ export default function LoginPage() {
         },
       },
     });
-  };
-
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    setLoading(true);
-    setMessage(null);
-
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${location.origin}/auth/callback`,
-      },
-    });
-
-    if (error) {
-      setMessage({ type: "error", text: error.message });
-    } else {
-      setMessage({ type: "success", text: "Check your email for the login link!" });
-    }
-    setLoading(false);
   };
 
   return (
@@ -71,45 +47,6 @@ export default function LoginPage() {
         <p className="mb-8" style={{ color: "var(--text-muted)" }}>
           Sign in to manage your finances smarter.
         </p>
-
-        {/* Email Sign In */}
-        <form onSubmit={handleEmailLogin} className="flex flex-col gap-4 mb-6">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-              Email Address
-            </label>
-            <input
-              id="email"
-              type="email"
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-[var(--bg-primary)] border border-[var(--border)] text-white focus:border-[var(--accent)] outline-none transition-all"
-              required
-            />
-          </div>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            disabled={loading}
-            className="w-full py-3.5 px-6 rounded-xl font-bold text-white transition-all duration-200 disabled:opacity-50"
-            style={{ background: "var(--accent)", boxShadow: "0 4px 20px rgba(108,99,255,0.4)" }}>
-            {loading ? "Sending link..." : "Send Magic Link"}
-          </motion.button>
-        </form>
-
-        {message && (
-          <div className={`mb-6 p-4 rounded-xl text-sm ${message.type === "success" ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"}`}
-               style={{ border: `1px solid ${message.type === "success" ? "rgba(74,222,128,0.2)" : "rgba(248,113,113,0.2)"}` }}>
-            {message.text}
-          </div>
-        )}
-
-        <div className="flex items-center gap-4 mb-6">
-          <div className="h-px flex-1" style={{ background: "var(--border)" }} />
-          <span className="text-xs font-medium uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>OR</span>
-          <div className="h-px flex-1" style={{ background: "var(--border)" }} />
-        </div>
 
         {/* Google Sign In */}
         <motion.button
